@@ -1,6 +1,8 @@
 #User
 .env
 logs/
+gmid/
+
 
 
 # Byte-compiled / optimized / DLL files
