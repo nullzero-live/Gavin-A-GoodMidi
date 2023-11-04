@@ -1,0 +1,66 @@
+import mido
+from mido import MidiFile, MidiTrack, Message
+
+def create_chord_messages(chord, velocity, duration_ticks):
+    """
+    Create 'note on' and 'note off' messages for a chord.
+    
+    Parameters:
+    chord (list of int): MIDI note numbers for the chord.
+    velocity (int): The velocity with which the notes are played.
+    duration_ticks (int): The duration of the chord in ticks.
+    
+    Returns:
+    list of mido.Message: The 'note on' and 'note off' messages for the chord.
+    """
+    messages = []
+    # 'note on' messages for each note in the chord with 0 time since they are played together
+    messages.extend(Message('note_on', note=note, velocity=velocity, time=0) for note in chord)
+    # 'note off' messages, with the duration_ticks before the first 'note off'
+    messages.extend(Message('note_off', note=note, velocity=velocity, time=(duration_ticks if i == 0 else 0))
+                    for i, note in enumerate(chord))
+    return messages
+
+def add_chord_to_track(track, chord, start_time, duration_ticks, velocity=64):
+    """
+    Add chord messages to a MIDI track at the specified start time.
+    
+    Parameters:
+    track (mido.MidiTrack): The track to add the chord to.
+    chord (list of int): MIDI note numbers for the chord.
+    start_time (int): The start time in ticks for the chord.
+    duration_ticks (int): The duration of the chord in ticks.
+    velocity (int): The velocity with which the notes are played.
+    """
+    # Create the chord messages
+    chord_messages = create_chord_messages(chord, velocity, duration_ticks)
+    # Add time to the first message
+    chord_messages[0].time = start_time
+    # Add all messages to the track
+    track.extend(chord_messages)
+
+# Define your tempo and ticks per beat
+tempo = mido.bpm2tempo(120)
+ticks_per_beat = 480
+
+# Create a new MIDI file and track
+mid = MidiFile(ticks_per_beat=ticks_per_beat)
+track = MidiTrack()
+mid.tracks.append(track)
+
+# Set the tempo
+track.append(mido.MetaMessage('set_tempo', tempo=tempo))
+
+# Define your chords and rhythm pattern
+chords = [[60, 64, 67], [65, 69, 72], [67, 71, 74], [60, 64, 67]]
+rhythm_pattern = [1, 0.5, 0.5, 1]  # in beats
+
+# Add chords to the track according to the rhythm pattern
+current_time = 0  # Start time for the first chord
+for chord, duration in zip(chords, rhythm_pattern):
+    duration_ticks = int(duration * ticks_per_beat)
+    add_chord_to_track(track, chord, current_time, duration_ticks)
+    current_time += duration_ticks  # Move to the start time of the next chord
+
+# Save the MIDI file
+mid.save('chord_sequence_with_rhythm.mid')
