@@ -10,6 +10,7 @@ from langchain.schema.messages import HumanMessage, SystemMessage
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema.runnable import RunnableMap, RunnablePassthrough
 
+
 load_dotenv()
 _logger=setup_logger("langllm")
 os.environ["LANGCHAIN_WANDB_TRACING"] = "false"
@@ -34,10 +35,8 @@ song_structure = input("What structure would you like eg. AB|AB?")
 
 #Set of prompts
 prompt1 = ChatPromptTemplate.from_template(
-    """You are an expert level music composer. Generate the lyrics of a song named {song_name} that matches the following description. Make it catchy and suitable for a 4/4 rhythm 
-    ******
-    {song}
-    ******
+    """You are an expert level music composer. Generate the lyrics of a song named {song_name} that matches the following description. 
+    Make it catchy and suitable for a 4/4 rhythm 
     """
 )
 prompt2 = ChatPromptTemplate.from_template(
@@ -46,7 +45,7 @@ prompt2 = ChatPromptTemplate.from_template(
     Example:
     Verse:
     Chorus:
-
+    {chords}
     """    
 )
 
@@ -61,30 +60,41 @@ prompt3 = ChatPromptTemplate.from_template(
      Drums: tuple(int, int)
      }
 
-    Output only the dictionary, nothing else.
+    Output only the two dictionaries nothing else.
     """
 )
 
 prompt4 = ChatPromptTemplate.from_template(
     """Using MIDI notation Create a Dictionary of Lists with the Verse and Chorus Rhythm in 4/4 time:
-    Verse: {Verse}
-    Chorus: {Chorus}
+
     
     Example:
-    {Verse:[],
-    Chorus:[]}"""
+     {Verse} :[],
+      {Chorus} :[]
+      
+    
+    """
 )
+
+prompt5 = ChatPromptTemplate.from_template(
+    """Output the {dictionary} dictionary as a JSON object. Nothing Else:
+    {output}
+ """   
+)
+
 
 model_parser = model | StrOutputParser()
 
 describer = (
-    {"song": RunnablePassthrough()} | prompt1 | {"color": model_parser}
+    {"song_name": song_name} | prompt1 | {"song": model_parser}
 )
-color_to_fruit = prompt2 | model_parser
-color_to_country = prompt3 | model_parser
-question_generator = (
-    color_generator | {"fruit": color_to_fruit, "country": color_to_country} | prompt4
-)
+print(describer.invoke())
+chords = {"song": prompt1} | prompt2 | {"chords:":model_parser}
+chords_to_midi = {"verse":itemgetter("verse"), "chorus":itemgetter("chorus")} | prompt3 | model_parser
+midi_to_rhythm = prompt4 | {"verse": itemgetter("verse") | "chorus": model_parser}
+final_dicts = {"dictionary": , "country": color_to_country} | prompt4
 
-prompt = question_generator.invoke("warm")
-model.invoke(prompt)
+
+
+#prompt = question_generator.invoke("warm")
+#model.invoke(prompt)
