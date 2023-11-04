@@ -45,39 +45,52 @@ prompt2 = ChatPromptTemplate.from_template(
     Example:
     Verse:
     Chorus:
-    {chords}
     """    
 )
 
 #Can generate the colors of the song and make a User Interface.
 prompt3 = ChatPromptTemplate.from_template(
-    """Take the {chords} and using MIDI notation. Write the synth, bass and drum MIDI notes as two dictionaries. One dictionary for the verse, one for the chorus.:
+    """Take the {chords} 
+    
+    Use MIDI notation. Write the synth, bass and drum MIDI notes for the {element} with varying velocity.
+    Output as a dictionary
+    Leave Rhythm empty for the next step:
+
     Example:
     {Song Name: str,
-    Element: str(Verse | Chorus),
+    Element: str({element}),
      Synth: tuple(int,int),
      Bass: tuple(int,int),
      Drums: tuple(int, int)
+     Rhythm: list
      }
 
-    Output only the two dictionaries nothing else.
+    Output nothing else.
     """
 )
 
 prompt4 = ChatPromptTemplate.from_template(
-    """Using MIDI notation Create a Dictionary of Lists with the Verse and Chorus Rhythm in 4/4 time:
-
+    """
+    Generate the rhythm MIDI notation for the {element} as list(tuple(int, int, int))
+    Use 4/4 time in Traditional Western Notation.
+    Insert the list into the dictionary created previously
     
-    Example:
-     {Verse} :[],
-      {Chorus} :[]
+        Example:
+    {Song Name: str,
+    Element: str({element}),
+     Synth: tuple(int,int),
+     Bass: tuple(int,int),
+     Drums: tuple(int, int)
+     Rhythm: list({rhythm})
+     }
       
     
     """
 )
 
 prompt5 = ChatPromptTemplate.from_template(
-    """Output the {dictionary} dictionary as a JSON object. Nothing Else:
+    """Cleanup any inconistencies. Remove unnecessary information.
+    Output the {dictionary} dictionary as a JSON object. Nothing Else:
     {output}
  """   
 )
@@ -86,12 +99,11 @@ prompt5 = ChatPromptTemplate.from_template(
 model_parser = model | StrOutputParser()
 
 describer = (
-    {"song_name": song_name} | prompt1 | {"song": model_parser}
-)
+    {"song_name": song_name} | prompt1 | {"song": model_parser})
 print(describer.invoke())
 chords = {"song": prompt1} | prompt2 | {"chords:":model_parser}
 chords_to_midi = {"verse":itemgetter("verse"), "chorus":itemgetter("chorus")} | prompt3 | model_parser
-midi_to_rhythm = prompt4 | {"verse": itemgetter("verse") | "chorus": model_parser}
+midi_to_rhythm = prompt4 | {"verse": itemgetter("verse")}, {"chorus": model_parser}
 final_dicts = {"dictionary": , "country": color_to_country} | prompt4
 
 
