@@ -1,6 +1,6 @@
 import streamlit as st
 from PIL import Image
-from cmd_chain import image_of_description, song_description
+from cmd_chain import image_of_description
 
 header_image = Image.open('/Users/nullzero/Documents/repos/gitlab.com/audiato/avin-midi/public/fd1ba208-69ad-43f0-9c9f-70f803a44c11.webp')
 
@@ -37,7 +37,11 @@ user_song_name = st.text_input("Name your song", "")
 
 # Submit button
 if st.button('Submit'):
-    handle_midi_conversion(user_input)
+    try:
+        image_of_description(user_song_desc)
+    except Exception as e:
+        _logger.error(e)
+    #handle_midi_conversion(user_song_desc)
 
 # Output box for displaying the streaming function's output
 output_box = st.empty()  # Create an empty output box which will be filled by stream_output function

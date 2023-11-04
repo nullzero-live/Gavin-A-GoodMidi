@@ -38,8 +38,7 @@ song_name = "Gavin A Good Test" #input('What would you like the name of your son
 
 def image_of_description(description):
     #Make an image of the song description
-    image_req = openai.Image.create(
-    prompt=(f"A futuristic anime image with vibrant color of: {song_description}")
+    image_req = openai.Image.create(prompt=f"A futuristic anime image with vibrant color of: {song_description}",
     n=2,
     size="1024x1024"
     )
@@ -55,7 +54,8 @@ def image_of_description(description):
 
 #Set of prompts
 prompt1 = ChatPromptTemplate.from_template(
-    """You are an expert level music composer. Generate the lyrics of a song named "Gavin a Good Test"  that matches the following description. 
+    """You are an expert level music composer. Generate the lyrics of a song named 'Gavin a Good Test.'
+     The theme of the song will matche the following description. 
     Make it catchy and suitable for a 4/4 rhythm:
     ```{description}
     ```
@@ -121,14 +121,15 @@ prompt5 = ChatPromptTemplate.from_template(
 
 model_parser = model | StrOutputParser()
 
-describer =  ({"description": RunnablePassthrough()} | prompt1 | {"song": model_parser} )
+describer = {"description": RunnablePassthrough()} | prompt1 | {"song": model_parser}
 
-print(describer.invoke(song_description))
+prompt = describer.invoke("this is a test")
+print(model.invoke(prompt).replace("\n",""))
 
 chords = ( {"song": prompt1} | prompt2 | {"chords:":model_parser} )
 chords_to_midi = ( {"verse":itemgetter("verse"), "chorus":itemgetter("chorus")} | prompt3 | model_parser )
 midi_to_rhythm = ( ( chords_to_midi| {"verse": itemgetter("verse")}, {"chorus": model_parser}) )
-final_dicts = ( {"dictionary": midi_to_rhythm, "output": model_parser} | prompt5 )
+final_dicts = ( describer | {"dictionary": midi_to_rhythm, "output": midi_to_rhythm} | prompt5 )
 
 
 
