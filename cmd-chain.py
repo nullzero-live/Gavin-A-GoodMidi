@@ -1,7 +1,7 @@
 import os
+from dotenv import load_dotenv
 import wandb
 from langchain.chat_models import ChatOpenAI
-from dotenv import load_dotenv
 from gen_logger.logger_util import setup_logger
 from operator import itemgetter
 from langchain.schema.runnable import RunnableParallel
@@ -12,9 +12,11 @@ from langchain.schema.runnable import RunnableMap, RunnablePassthrough
 
 
 load_dotenv()
+
 _logger=setup_logger("langllm")
 os.environ["LANGCHAIN_WANDB_TRACING"] = "false"
 os.environ["WANDB_PROJECT"] = "avin-midi"
+_logger.info(f"{os.getenv('OPENAI_API_KEY')}")
 
 try:
     wandb.login(key=os.getenv("WANDB_API_KEY"))
@@ -23,12 +25,13 @@ except Exception as e:
     _logger.error(e)
 
 try:
+    _logger.info(f"Adding openAI API key {os.getenv('OPENAI_API_KEY')}")
     model = ChatOpenAI(openai_api_key=os.getenv("OPENAI_API_KEY"), model_name="gpt-3.5-turbo")
     _logger.info("init llm complete")
 except Exception as e:
     _logger.error(e)
 
-song_description = input("Describe your song")
+song_description = "A warm and fuzzy pop hit"#input("Describe your song")
 song_name = input("What would you like the name of your song to be?")
 song_structure = input("What structure would you like eg. AB|AB?")
 
@@ -36,7 +39,9 @@ song_structure = input("What structure would you like eg. AB|AB?")
 #Set of prompts
 prompt1 = ChatPromptTemplate.from_template(
     """You are an expert level music composer. Generate the lyrics of a song named {song_name} that matches the following description. 
-    Make it catchy and suitable for a 4/4 rhythm 
+    Make it catchy and suitable for a 4/4 rhythm:
+    ```{description}
+    ```
     """
 )
 prompt2 = ChatPromptTemplate.from_template(
@@ -90,7 +95,8 @@ prompt4 = ChatPromptTemplate.from_template(
 
 prompt5 = ChatPromptTemplate.from_template(
     """Cleanup any inconistencies. Remove unnecessary information.
-    Output the {dictionary} dictionary as a JSON object. Nothing Else:
+    Output the {dictionary} 
+    Output a JSON object. Nothing Else:
     {output}
  """   
 )
@@ -98,13 +104,14 @@ prompt5 = ChatPromptTemplate.from_template(
 
 model_parser = model | StrOutputParser()
 
-describer = (
-    {"song_name": song_name} | prompt1 | {"song": model_parser})
+describer =  ({"song_name": song_name, "description": song_description} | prompt1 | {"song": model_parser} )
+
 print(describer.invoke())
-chords = {"song": prompt1} | prompt2 | {"chords:":model_parser}
-chords_to_midi = {"verse":itemgetter("verse"), "chorus":itemgetter("chorus")} | prompt3 | model_parser
-midi_to_rhythm = prompt4 | {"verse": itemgetter("verse")}, {"chorus": model_parser}
-final_dicts = {"dictionary": , "country": color_to_country} | prompt4
+
+chords = ( {"song": prompt1} | prompt2 | {"chords:":model_parser} )
+chords_to_midi = ( {"verse":itemgetter("verse"), "chorus":itemgetter("chorus")} | prompt3 | model_parser )
+midi_to_rhythm = ( ( chords_to_midi| {"verse": itemgetter("verse")}, {"chorus": model_parser}) )
+final_dicts = ( {"dictionary": midi_to_rhythm, "output": model_parser} | prompt5 )
 
 
 
