@@ -129,7 +129,7 @@ model_parser = model | StrOutputParser()
 describer = {"description": RunnablePassthrough()} | prompt1 | {"song": model_parser}
 
 describer = describer.invoke("this is a test")
-print(model.invoke(prompt).replace("\n",""))
+print(model.invoke(describer).replace("\n",""))
 
 chords = ( {"song": describer} | prompt2 | {"chords:":model_parser} )
 chords_to_midi = ( {"element": "verse"} | prompt3 | {"midi": model_parser} )
