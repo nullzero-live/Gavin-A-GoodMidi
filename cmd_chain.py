@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+import openai
 import wandb
 from langchain.chat_models import ChatOpenAI
 from gen_logger.logger_util import setup_logger
@@ -31,14 +32,30 @@ try:
 except Exception as e:
     _logger.error(e)
 
-song_description = "A warm and fuzzy pop hit"#input("Describe your song")
-song_name = input("What would you like the name of your song to be?")
-song_structure = input("What structure would you like eg. AB|AB?")
+song_description = "A warm and fuzzy pop hit" #input("Describe your song")
+song_name = "Gavin A Good Test" #input('What would you like the name of your song to be?')
+#song_structure = input("What structure would you like eg. AB|AB?")
+
+def image_of_description(description):
+    #Make an image of the song description
+    image_req = openai.Image.create(
+    prompt=(f"A futuristic anime image with vibrant color of: {song_description}")
+    n=2,
+    size="1024x1024"
+    )
+
+    image_res = image_req["data"][0]
+    print(image_res)
+    return image_res
+
+
+
+
 
 
 #Set of prompts
 prompt1 = ChatPromptTemplate.from_template(
-    """You are an expert level music composer. Generate the lyrics of a song named {song_name} that matches the following description. 
+    """You are an expert level music composer. Generate the lyrics of a song named "Gavin a Good Test"  that matches the following description. 
     Make it catchy and suitable for a 4/4 rhythm:
     ```{description}
     ```
@@ -104,9 +121,9 @@ prompt5 = ChatPromptTemplate.from_template(
 
 model_parser = model | StrOutputParser()
 
-describer =  ({"song_name": song_name, "description": song_description} | prompt1 | {"song": model_parser} )
+describer =  ({"description": RunnablePassthrough()} | prompt1 | {"song": model_parser} )
 
-print(describer.invoke())
+print(describer.invoke(song_description))
 
 chords = ( {"song": prompt1} | prompt2 | {"chords:":model_parser} )
 chords_to_midi = ( {"verse":itemgetter("verse"), "chorus":itemgetter("chorus")} | prompt3 | model_parser )

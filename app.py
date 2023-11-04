@@ -1,4 +1,10 @@
 import streamlit as st
+from PIL import Image
+from cmd_chain import image_of_description, song_description
+
+header_image = Image.open('/Users/nullzero/Documents/repos/gitlab.com/audiato/avin-midi/public/fd1ba208-69ad-43f0-9c9f-70f803a44c11.webp')
+
+
 
 # Placeholder functions to be called on button click and for streaming output.
 def handle_midi_conversion(input_text):
@@ -21,11 +27,13 @@ def stream_output(output_box):
         output_box.text(output_data)  # Update the output box with new data
 
 # Create the Streamlit interface
+st.image(header_image,caption= "Avin",)
 st.title("'Avin a Good MIDI")
 st.subheader("MIDI interpreter based on natural language input")
 
 # Text input box
-user_input = st.text_input("Input", "")
+user_song_desc = st.text_input("Describe your song", "")
+user_song_name = st.text_input("Name your song", "")
 
 # Submit button
 if st.button('Submit'):
@@ -39,3 +47,7 @@ st.button('Start Streaming', on_click=stream_output, args=(output_box,))  # Butt
 st.header("MIDI")
 # Output box for displaying results from the MIDI processing function
 midi_output_box = st.empty()  # This will be used to display the output from the MIDI processing
+
+#Image of description
+st.header("Image of description")
+st.image(image_of_description(song_description))
