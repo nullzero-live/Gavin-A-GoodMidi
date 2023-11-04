@@ -62,17 +62,20 @@ prompt1 = ChatPromptTemplate.from_template(
     """
 )
 prompt2 = ChatPromptTemplate.from_template(
-    """Take the song and write the piano chords for a Chorus and Verse. Write the chords and nothing else:
+    """Take the song and write the piano chords for a Verse. Write the chords as a python list and nothing else:
     {song}
     Example:
-    Verse:
-    Chorus:
+    Verse: [{chords}]
+    
     """    
 )
 
 #Can generate the colors of the song and make a User Interface.
 prompt3 = ChatPromptTemplate.from_template(
-    """Take the {chords} 
+    """Take the following chords:
+    ********
+    {chords}
+    ********* 
     
     Use MIDI notation. Write the synth, bass and drum MIDI notes for the {element} with varying velocity.
     Output as a dictionary
@@ -93,11 +96,13 @@ prompt3 = ChatPromptTemplate.from_template(
 
 prompt4 = ChatPromptTemplate.from_template(
     """
-    Generate the rhythm MIDI notation for the {element} as list(tuple(int, int, int))
+    Generate the rhythm MIDI notation for the {element} as:
+    list(tuple(int, int, int))
     Use 4/4 time in Traditional Western Notation.
-    Insert the list into the dictionary created previously
-    
-        Example:
+    Insert the list into the dictionary created previously:
+    {midi_rhythm}
+   
+    Example:
     {Song Name: str,
     Element: str({element}),
      Synth: tuple(int,int),
@@ -123,13 +128,14 @@ model_parser = model | StrOutputParser()
 
 describer = {"description": RunnablePassthrough()} | prompt1 | {"song": model_parser}
 
-prompt = describer.invoke("this is a test")
+describer = describer.invoke("this is a test")
 print(model.invoke(prompt).replace("\n",""))
 
-chords = ( {"song": prompt1} | prompt2 | {"chords:":model_parser} )
-chords_to_midi = ( {"verse":itemgetter("verse"), "chorus":itemgetter("chorus")} | prompt3 | model_parser )
-midi_to_rhythm = ( ( chords_to_midi| {"verse": itemgetter("verse")}, {"chorus": model_parser}) )
-final_dicts = ( describer | {"dictionary": midi_to_rhythm, "output": midi_to_rhythm} | prompt5 )
+chords = ( {"song": describer} | prompt2 | {"chords:":model_parser} )
+chords_to_midi = ( {"element": "verse"} | prompt3 | {"midi": model_parser} )
+midi_to_rhythm = ( {"element": "verse", "midi_rhythm": chords_to_midi} |  {"rhythm": model_parser})
+midi_dict = ( describer | {"dictionary": chords_to_midi} | prompt5 )
+rhythm_dict = (describer | {"dictionary": midi_to_rhythm} | prompt5 )
 
 
 
