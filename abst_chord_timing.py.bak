@@ -1,7 +1,7 @@
 import mido
 from mido import MidiFile, MidiTrack, Message
 
-def create_chord_messages(chord, velocity, duration_ticks):
+def create_chord_messages(chords, velocity, duration_ticks):
     """
     Create 'note on' and 'note off' messages for a chord.
     
@@ -13,7 +13,10 @@ def create_chord_messages(chord, velocity, duration_ticks):
     Returns:
     list of mido.Message: The 'note on' and 'note off' messages for the chord.
     """
+
     messages = []
+
+    for chord in chords:
     # 'note on' messages for each note in the chord with 0 time since they are played together
     messages.extend(Message('note_on', note=note, velocity=velocity, time=0) for note in chord)
     # 'note off' messages, with the duration_ticks before the first 'note off'

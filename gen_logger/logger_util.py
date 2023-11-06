@@ -9,7 +9,7 @@ def setup_logger(name):
     
     handlers = [
         {"cls": logging.StreamHandler, "level": logging.DEBUG, "fmt": '%(name)s - %(levelname)s - %(message)s'},
-        {"cls": logging.FileHandler, "level": logging.WARNING, "fmt": '%(asctime)s - %(name)s - %(levelname)s - %(message)s', "filename": './logs/app.log'}
+        {"cls": logging.FileHandler, "level": logging.DEBUG, "fmt": '%(asctime)s - %(name)s - %(levelname)s - %(message)s', "filename": './logs/app.log'}
     ]
     
     for h in handlers:

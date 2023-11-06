@@ -34,6 +34,7 @@ st.subheader("MIDI interpreter based on natural language input")
 # Text input box
 user_song_desc = st.text_input("Describe your song", "")
 user_song_name = st.text_input("Name your song", "")
+model_choice = st.selectbox("Model", ["GPT-3", "GPT-4"])
 
 # Submit button
 if st.button('Submit'):
@@ -54,4 +55,4 @@ midi_output_box = st.empty()  # This will be used to display the output from the
 
 #Image of description
 st.header("Image of description")
-st.image(image_of_description(song_description))
+st.image(image_of_description(user_song_desc)
