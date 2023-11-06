@@ -1,10 +1,10 @@
 import datetime
-    
+
 from ..wandb.sdk.data_types.trace_tree import Trace
 
 
 model_name = "gpt-3.5-turbo"
-temperature = 0.7
+temperature = 0.3
 system_message = "You are a helpful assistant that always replies in 3 concise bullet points using markdown."
 
 queries_ls = [

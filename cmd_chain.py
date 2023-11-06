@@ -1,4 +1,5 @@
 import os
+import json
 from datetime import datetime
 import timeit
 from dotenv import load_dotenv
@@ -22,7 +23,7 @@ import spacy
 from operator import itemgetter
 from langchain.schema.runnable import RunnableParallel
 from langchain.schema import StrOutputParser
-from langchain.schema.output_parser import JsonOutputParser
+from langchain.output_parsers.json import SimpleJsonOutputParser
 from langchain.schema import messages_to_dict 
 from langchain.schema.messages import HumanMessage, SystemMessage
 from langchain.prompts import ChatPromptTemplate
@@ -52,7 +53,7 @@ try:
     _logger.info(f"Adding openAI API key")
     #callbacks = [StdOutCallbackHandler(), wandb_callback]
     model = ChatOpenAI(openai_api_key=os.getenv("OPENAI_API_KEY"), model_name="gpt-3.5-turbo") 
-    _logger.info("init llm complete. Model is {}".format(model))
+    _logger.info("init llm complete. Model is {}".format(model.model_name))
 except AuthenticationError as e:
     _logger.error(e)
 
@@ -84,9 +85,11 @@ prompt1 = ChatPromptTemplate.from_template(
     The lyrics of the song will matche the following description. 
     -Make it catchy and suitable for a 4/4 rhythm:
     The mood, tone and style is to be:
-    ```{description}
     ```
-    
+    {description}
+    ```
+    Output the verse lyrics as a string with appropriate line breaks and paragraphs. 
+    Remove all new line markers "\\n"
     """
 )
 prompt2 = ChatPromptTemplate.from_template(
@@ -112,22 +115,21 @@ prompt3 = ChatPromptTemplate.from_template(
     - Leave Rhythm empty for the next step
     - Remove all new line characters "\n"
     
-    Output nothing else but a JSON Object with the MIDI that corresponds to the chords.
+    Output nothing else but a JSON Object with the MIDI.
     """)
 
 prompt4 = ChatPromptTemplate.from_template(
     """
-    What is the MIDI notation of the rhythm {element} and:
-    {chords} as:
-    
-    list(tuple(int, int, int))
-    Use 4/4 time in Traditional Western Notation at 65bpm.
-    Match the rhythm to the song.
-    Remove all new line characters "\n"
-    Insert the data into the rhythm key of the MIDI JSON Object
+    Generate the MIDI Notation of the Rhythm of the Song? Focusing on the:
+    {element} and {chords}
+    Below is the MIDI of the instruments:
     {midi_dict}
-      
-    Output nothing but a JSON Object with the MIDI that corresponds to the rhythm element of the song.
+    -Use standard MIDI rhythm notation to match the chords.
+    -Use 4/4 time in Traditional Western Notation at 65bpm.
+    - Match the rhythm to the song.
+    - Remove all new line characters "\n"
+    -Insert the data into the rhythm key of the midi JSON Object
+    - Output nothing but a JSON Object with the MIDI that corresponds to the rhythm element of the song.
     """
 )
 
@@ -142,38 +144,64 @@ prompt5 = ChatPromptTemplate.from_template(
 song_name = "Cherry Prick Ya Dick"
 description = "A warm blues vibe"
 model_parser = model | StrOutputParser()
-json_parser = model | JsonOutputParser()
+json_parser = model | SimpleJsonOutputParser()
 
 describer = {"description": RunnablePassthrough(), "song_name": RunnablePassthrough()} | prompt1 | {"song":model_parser}
-describer.invoke({"description": description, "song_name": song_name})
-chords =  {"song": describer} | prompt2 | model
-chords_to_midi = {"element": itemgetter("element"), "chords": chords, "song_name": itemgetter("song_name") } | prompt3 | {"midi": json_parser}
-midi_to_rhythm = {"element": itemgetter("element"), "rhythm_dict": chords_to_midi, "song_name": itemgetter(song_name)} | prompt4 | {"rhythm":json_parser}
+print(describer.invoke({"description": description, "song_name": song_name}))
+chords =  {"song": describer} | prompt2 | model_parser
+chords_to_midi = {"element": itemgetter("element"), "chords": chords} | prompt3 | {"midi": json_parser}
+midi_to_rhythm = {"element": itemgetter("element"), "chords":chords, "midi_dict": chords_to_midi} | prompt4 | {"rhythm":json_parser}
 midi_chain = {"dictionary": chords_to_midi} | prompt5 | json_parser
 rhythm_chain = {"dictionary": midi_to_rhythm} | prompt5 | json_parser
 
-
+'''
 final = chords.invoke({"description": description, "song_name": song_name})
 print(final)
 c2m = chords_to_midi.invoke({"element": itemgetter("element"), "chords":chords, "description": description, "song_name": song_name})
 #final = messages_to_dict(midi_chain.invoke({"element": "verse", "description": description, "song_name": song_name}, config={"verbose": True}))
 print(c2m)
 m2r = midi_to_rhythm
+'''
+_logger.info("starting chain")
+song_desc = describer.invoke({"description": description, "song_name": song_name})
+_logger.info(f"song description complete")
+chords_list = chords.invoke({"song": describer})
+_logger.info(f"Chords list complete")
+_logger.info(chords_list)
+midi_list = chords_to_midi.invoke({"element": "verse", "chords": chords_list, "song_name": song_name})
+_logger.info(f"Midi list complete")
+rhythm_midi = midi_to_rhythm.invoke({"element": itemgetter("element"), "rhythm_dict": chords_to_midi})
+_logger(f"Rhythm list complete")
+midi_out = midi_chain.invoke({"dictionary": chords_to_midi})
+rhythm_out = rhythm_chain.invoke({"dictionary": chords_to_midi})
+_logger.info("Complete....writing file")
 
-print(midi_chain.invoke({"element":"verse", "description": description, "song_name": song_name}+'\n'))
-print(rhythm_chain.invoke({"element":"verse", "description": description, "song_name": song_name}+'\n'))
-
-'''midi_dict = midi_dict.invoke(chords_to_midi)
-prediction_table args(ln34):
-    logTime", "func" "prompt", "prompt_tokens", "completion", 
-                                            "completion_tokens", "time"
 
 
-model.invoke(midi_dict)
-wandb_callback.flush_tracker(midi_dict, name="midi_dict")
-rhythm_dict = rhythm_dict.invoke(midi_to_rhythm)
-wandb_callback.flush_tracker(rhythm_dict, name="rhythm_dict")
+#midi_output = midi_chain.invoke({"element":"verse", "description": description, "song_name": song_name})
 
+#rhythm_output = rhythm_chain.invoke({"element":"verse", "description": description, "song_name": song_name})
+file_name = "_".join(song_name.split()[0:4]) + "_avin_agoodtime.txt"
 
-_logger.info(model.invoke(midi_to_rhythm))'''
+with open(file_name, 'w') as f:
+    f.write(f"00----The Noble Song: {song_name} at 65 bpm----00\n\n")
+    f.write(song_desc)
+    f.write(f"\n00----The Chords of {song_name}----00\n\n")
+    f.write(chords_list)
+    f.write("\n00----The MIDI----00\n\n")
+    f.write(json.dumps(midi_list, indent=4))
+    f.write("\n00----The Rhythm------00\n\n")
+    f.write(json.dumps(rhythm_midi, indent=4))
+    f.write("\n\n\n00----The Final Midi------00\n\n\n")
+    f.write(json.dumps(midi_out, indent=4))
+    f.write("\n\n\n00----The Final Rhythm------00\n\n\n")
+    f.write(json.dumps(rhythm_out), indent=4)
+    f.write(f"\n\n\n00----The EDN------00\n\n\n")
+    
 
+    
+    
+    
+    
+    
+   

@@ -2,6 +2,10 @@
 .env
 logs/
 gmid/
+env/
+*.env
+env*
+
 
 
 
