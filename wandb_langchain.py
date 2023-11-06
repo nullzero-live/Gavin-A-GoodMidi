@@ -1,5 +1,11 @@
+import wandb
 from datetime import datetime
 from langchain.callbacks import WandbCallbackHandler, StdOutCallbackHandler
+from wandb.integration.langchain import WandbTracer
+import spacy
+
+
+
 ''' Tracking config for MLOps Tools:
 - Langchain
 - WandB
@@ -23,7 +29,11 @@ Parameters:
 '''
 
 session_group = datetime.now().strftime("%m.%d.%Y_%H.%M.%S")
-wandb_callback = WandbCallbackHandler(
+'''wandbTrace = WandbTracer()
+wandbTrace.init()'''
+
+    
+'''wandb_callback = WandbCallbackHandler(
     job_type="inference",
     project="langchain_callback_demo",
     group=f"minimal_{session_group}",
@@ -31,3 +41,4 @@ wandb_callback = WandbCallbackHandler(
     tags=["test"],
 )
 callbacks = [StdOutCallbackHandler(), wandb_callback]
+'''

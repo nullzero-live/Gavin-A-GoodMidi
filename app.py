@@ -1,9 +1,10 @@
 import streamlit as st
 from PIL import Image
 from cmd_chain import image_of_description
+from gen_logger import setup_logger
 
 header_image = Image.open('/Users/nullzero/Documents/repos/gitlab.com/audiato/avin-midi/public/fd1ba208-69ad-43f0-9c9f-70f803a44c11.webp')
-
+_logger = setup_logger(__name__)
 
 
 # Placeholder functions to be called on button click and for streaming output.
@@ -55,4 +56,4 @@ midi_output_box = st.empty()  # This will be used to display the output from the
 
 #Image of description
 st.header("Image of description")
-st.image(image_of_description(user_song_desc)
+st.image(image_of_description(user_song_desc))
