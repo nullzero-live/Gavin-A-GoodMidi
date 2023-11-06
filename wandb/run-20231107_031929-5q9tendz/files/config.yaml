@@ -7,7 +7,7 @@ _wandb:
     cli_version: 0.15.12
     is_jupyter_run: false
     is_kaggle_kernel: false
-    start_time: 1699285369.60467
+    start_time: 1699289369.158887
     t:
       1:
       - 33
@@ -26,4 +26,6 @@ _wandb:
       8:
       - 4
       - 5
+      9:
+        2: langchain
       13: darwin-arm64

@@ -7,7 +7,7 @@ import openai
 from openai.error import AuthenticationError
 import wandb
 from langchain.chat_models import ChatOpenAI
-import random
+from langchain.parallel import ParallelChain
 
 
 #Logging etc
@@ -167,20 +167,16 @@ try:
     _logger.info("starting chain")
     song_desc = describer.invoke({"description": description, "song_name": song_name})
     _logger.info(f"song description complete")
-    _logger.info(f"First 19 characters: {str(song_desc.split()[0:20])}")
+    _logger.log
     chords_list = chords.invoke({"song": describer})
     _logger.info(f"Chords list complete")
     _logger.info(chords_list)
     midi_list = chords_to_midi.invoke({"element": "verse", "chords": chords_list, "song_name": song_name})
     _logger.info(f"Midi list complete")
-    _logger.info(midi_list)
     rhythm_midi = midi_to_rhythm.invoke({"element": itemgetter("element"), "rhythm_dict": chords_to_midi})
     _logger.info(f"Rhythm list complete")
-    _logger.info(rhythm_midi)
     midi_out = midi_chain.invoke({"dictionary": chords_to_midi, "element":"verse", "description": description, "song_name": song_name})
-    _logger.info(midi_out)
     rhythm_out = rhythm_chain.invoke({"dictionary": midi_to_rhythm, "element":"verse", "description": description, "song_name": song_name})
-    _logger.info(rhythm_out)
     _logger.info("Complete....writing file")
 except Exception as e:
     _logger.error(e, exc_info=True)
@@ -201,12 +197,16 @@ except Exception as e:
             f.write("\n\n\n00----The Final Rhythm------00\n\n\n")
             f.write(json.dumps(rhythm_out), indent=4)
             f.write(f"\n\n\n00----The EDN------00\n\n\n")
-        except Exception as e:
-            _logger.error(e, exc_info=True)
-            os.remove('./data/cmd_chain_gav.txt')
+        except Exception as err:
+            _logger.error(err, exc_info=True)
+            os.remove('cmd_chain_gav.txt')
             os.remove(file_name)
 
-#Write to final file
+
+
+#midi_output = midi_chain.invoke({"element":"verse", "description": description, "song_name": song_name})
+
+#rhythm_output = rhythm_chain.invoke({"element":"verse", "description": description, "song_name": song_name})
 
 
 with open(file_name, 'w') as f:
@@ -222,9 +222,9 @@ with open(file_name, 'w') as f:
     f.write(json.dumps(midi_out, indent=4))
     f.write("\n\n\n00----The Final Rhythm------00\n\n\n")
     f.write(json.dumps(rhythm_out), indent=4)
-    f.write("\n\n\n00----The EDN------00\n\n\n")
+    f.write(f"\n\n\n00----The EDN------00\n\n\n")
 
-_logger.info(f"File completed and saved to: {os.path.abspath(file_name)}")
+_logger.info(f"File completed and saved to: {os.path(file_name)}")
     
 
     

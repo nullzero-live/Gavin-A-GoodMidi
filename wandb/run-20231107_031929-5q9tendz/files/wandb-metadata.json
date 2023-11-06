@@ -1,0 +1,39 @@
+{
+    "os": "macOS-13.5-arm64-arm-64bit",
+    "python": "3.10.13",
+    "heartbeatAt": "2023-11-06T16:49:29.943813",
+    "startedAt": "2023-11-06T16:49:29.155347",
+    "docker": null,
+    "cuda": null,
+    "args": [
+        "--verbose"
+    ],
+    "state": "running",
+    "program": "/Users/nullzero/Documents/repos/gitlab.com/audiato/avin-midi/cmd_chain.py",
+    "codePathLocal": "cmd_chain.py",
+    "codePath": "cmd_chain.py",
+    "git": {
+        "remote": null,
+        "commit": "024743dce44a430699dae448f13abb56b22baf33"
+    },
+    "email": "p4rlx-news@pm.me",
+    "root": "/Users/nullzero/Documents/repos/gitlab.com/audiato/avin-midi",
+    "host": "null0-2",
+    "username": "nullzero",
+    "executable": "/Users/nullzero/Documents/repos/gitlab.com/nullzero-id/NZ_MODULES/dependonme/dom/bin/python3",
+    "cpu_count": 10,
+    "cpu_count_logical": 10,
+    "disk": {
+        "/": {
+            "total": 926.3517189025879,
+            "used": 8.880130767822266
+        }
+    },
+    "gpuapple": {
+        "type": "arm",
+        "vendor": "Apple"
+    },
+    "memory": {
+        "total": 16.0
+    }
+}
